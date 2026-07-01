@@ -108,4 +108,172 @@
 <div class="card">
   <select id="service">
     <option value="Army">육군 Army</option>
-    <option value="Air Force">공군 Air
+    <option value="Air Force">공군 Air Force</option>
+    <option value="Space Force">우주군 Space Force</option>
+    <option value="Marine Corps">해병대 Marine Corps</option>
+    <option value="Navy">해군 Navy</option>
+    <option value="Random">랜덤 Random Service</option>
+  </select>
+
+  <select id="mode">
+    <option value="mixed">Mixed Questions</option>
+    <option value="abbr">Ask for Abbreviation</option>
+    <option value="full">Ask for Full Rank Name</option>
+    <option value="korean">Ask for Korean Rank</option>
+  </select>
+</div>
+
+<div class="card">
+  <div class="question-type" id="questionType"></div>
+  <div class="small" id="serviceLabel"></div>
+  <div class="question" id="questionText"></div>
+
+  <input id="answerInput" placeholder="Type your answer here" autocomplete="off" />
+
+  <button onclick="checkAnswer()">Check Answer</button>
+  <button class="secondary" onclick="showAnswer()">Show Answer</button>
+  <button onclick="nextQuestion()">Next Question</button>
+
+  <div class="answer" id="answerBox"></div>
+  <p class="result" id="result"></p>
+
+  <div class="score">
+    <span id="scoreText">Score: 0 / 0</span>
+    <span id="streakText">Streak: 0</span>
+  </div>
+
+  <button class="danger" onclick="resetScore()">Reset Score</button>
+</div>
+
+<script>
+const ranks = [
+  ["대장","GEN","General","Gen","General","Gen","General","Gen","General","ADM","Admiral"],
+  ["중장","LTG","Lieutenant General","Lt Gen","Lieutenant General","Lt Gen","Lieutenant General","LtGen","Lieutenant General","VADM","Vice Admiral"],
+  ["소장","MG","Major General","Maj Gen","Major General","Maj Gen","Major General","MajGen","Major General","RADM","Rear Admiral"],
+  ["준장","BG","Brigadier General","Brig Gen","Brigadier General","Brig Gen","Brigadier General","BGen","Brigadier General","RDML","Rear Admiral (Lower Half)"],
+  ["대령","COL","Colonel","Col","Colonel","Col","Colonel","Col","Colonel","CAPT","Captain"],
+  ["중령","LTC","Lieutenant Colonel","Lt Col","Lieutenant Colonel","Lt Col","Lieutenant Colonel","LtCol","Lieutenant Colonel","CDR","Commander"],
+  ["소령","MAJ","Major","Maj","Major","Maj","Major","Maj","Major","LCDR","Lieutenant Commander"],
+  ["대위","CPT","Captain","Capt","Captain","Capt","Captain","Capt","Captain","LT","Lieutenant"],
+  ["중위","1LT","First Lieutenant","1st Lt","First Lieutenant","1st Lt","First Lieutenant","1stLt","First Lieutenant","LTJG","Lieutenant (Junior Grade)"],
+  ["소위","2LT","Second Lieutenant","2d Lt","Second Lieutenant","2nd Lt","Second Lieutenant","2ndLt","Second Lieutenant","ENS","Ensign"],
+  ["준위","WO","Warrant Officer","WO","Warrant Officer (historical)","N/A","N/A","WO","Warrant Officer","WO","Warrant Officer"],
+  ["원사","SGM","Sergeant Major","CMSgt","Chief Master Sergeant","CMSgt","Chief Master Sergeant","MGySgt","Master Gunnery Sergeant","MCPO","Master Chief Petty Officer"],
+  ["상사","MSG","Master Sergeant","SMSgt","Senior Master Sergeant","SMSgt","Senior Master Sergeant","MSgt","Master Sergeant","SCPO","Senior Chief Petty Officer"],
+  ["중사","SFC","Sergeant First Class","MSgt","Master Sergeant","MSgt","Master Sergeant","GySgt","Gunnery Sergeant","CPO","Chief Petty Officer"],
+  ["하사","SSG","Staff Sergeant","TSgt","Technical Sergeant","TSgt","Technical Sergeant","SSgt","Staff Sergeant","PO1","Petty Officer First Class"],
+  ["병장","SGT","Sergeant","SSgt","Staff Sergeant","Sgt","Sergeant","Sgt","Sergeant","PO2","Petty Officer Second Class"],
+  ["상병","CPL / SPC","Corporal / Specialist","SrA","Senior Airman","Specialist 4","Specialist 4","Cpl","Corporal","PO3","Petty Officer Third Class"],
+  ["일병","PFC","Private First Class","A1C","Airman First Class","Specialist 3","Specialist 3","LCpl","Lance Corporal","SN","Seaman"],
+  ["이병","PV2","Private","Amn","Airman","Specialist 2","Specialist 2","PFC","Private First Class","SA","Seaman Apprentice"],
+  ["훈병","PVT","Private","AB","Airman Basic","Specialist 1","Specialist 1","Pvt","Private","SR","Seaman Recruit"]
+];
+
+const serviceMap = {
+  "Army": [1,2],
+  "Air Force": [3,4],
+  "Space Force": [5,6],
+  "Marine Corps": [7,8],
+  "Navy": [9,10]
+};
+
+let currentRank, currentService, currentMode, correctAnswers;
+let score = 0, total = 0, streak = 0;
+
+function pickService() {
+  const selected = document.getElementById("service").value;
+  if (selected !== "Random") return selected;
+  const services = Object.keys(serviceMap);
+  return services[Math.floor(Math.random() * services.length)];
+}
+
+function pickMode() {
+  const selected = document.getElementById("mode").value;
+  if (selected !== "mixed") return selected;
+  const modes = ["abbr", "full", "korean"];
+  return modes[Math.floor(Math.random() * modes.length)];
+}
+
+function normalize(text) {
+  return text.toLowerCase().replace(/[().]/g, "").replace(/\s+/g, " ").trim();
+}
+
+function nextQuestion() {
+  currentRank = ranks[Math.floor(Math.random() * ranks.length)];
+  currentService = pickService();
+  currentMode = pickMode();
+
+  const [abbrIndex, fullIndex] = serviceMap[currentService];
+  const korean = currentRank[0];
+  const abbr = currentRank[abbrIndex];
+  const full = currentRank[fullIndex];
+
+  document.getElementById("serviceLabel").textContent = currentService;
+  document.getElementById("answerInput").value = "";
+  document.getElementById("result").textContent = "";
+  document.getElementById("answerBox").style.display = "none";
+
+  if (currentMode === "abbr") {
+    document.getElementById("questionType").textContent = "Type the abbreviation";
+    document.getElementById("questionText").textContent = korean;
+    correctAnswers = [abbr];
+  } else if (currentMode === "full") {
+    document.getElementById("questionType").textContent = "Type the full rank name";
+    document.getElementById("questionText").textContent = `${korean} / ${abbr}`;
+    correctAnswers = [full];
+  } else {
+    document.getElementById("questionType").textContent = "Type the Korean rank";
+    document.getElementById("questionText").textContent = `${abbr} / ${full}`;
+    correctAnswers = [korean];
+  }
+
+  document.getElementById("answerBox").textContent =
+    `${korean} = ${abbr} ${full}`;
+}
+
+function checkAnswer() {
+  const input = normalize(document.getElementById("answerInput").value);
+  const isCorrect = correctAnswers.some(ans => normalize(ans) === input);
+
+  total++;
+
+  if (isCorrect) {
+    score++;
+    streak++;
+    document.getElementById("result").textContent = "✅ Correct";
+    document.getElementById("result").style.color = "#86efac";
+  } else {
+    streak = 0;
+    document.getElementById("result").textContent =
+      `❌ Correct: ${correctAnswers.join(" / ")}`;
+    document.getElementById("result").style.color = "#fca5a5";
+  }
+
+  updateScore();
+}
+
+function showAnswer() {
+  document.getElementById("answerBox").style.display = "block";
+}
+
+function updateScore() {
+  document.getElementById("scoreText").textContent = `Score: ${score} / ${total}`;
+  document.getElementById("streakText").textContent = `Streak: ${streak}`;
+}
+
+function resetScore() {
+  score = 0;
+  total = 0;
+  streak = 0;
+  updateScore();
+}
+
+document.getElementById("answerInput").addEventListener("keydown", e => {
+  if (e.key === "Enter") checkAnswer();
+});
+
+nextQuestion();
+</script>
+
+</body>
+</html>
