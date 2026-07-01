@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>US Rank Trainer</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0f172a;
+      color: white;
+      padding: 16px;
+    }
+    h1 { text-align: center; }
+    .card {
+      background: #1e293b;
+      border-radius: 18px;
+      padding: 24px;
+      margin: 16px 0;
+      text-align: center;
+      box-shadow: 0 8px 20px rgba(0,0,0,.3);
+    }
+    button, select, input {
+      width: 100%;
+      padding: 14px;
+      margin: 8px 0;
+      border-radius: 12px;
+      border: none;
+      font-size: 16px;
+    }
+    button {
+      background: #38bdf8;
+      color: #020617;
+      font-weight: bold;
+    }
+    .answer {
+      display: none;
+      margin-top: 16px;
+      color: #a7f3d0;
+      font-size: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    th, td {
+      border: 1px solid #334155;
+      padding: 6px;
+      text-align: left;
+    }
+    th { background: #1e293b; }
+  </style>
+</head>
+<body>
+
+<h1>US Rank Trainer</h1>
+
+<select id="service">
+  <option value="Army">Army</option>
+  <option value="Air Force">Air Force</option>
+  <option value="Space Force">Space Force</option>
+  <option value="Marine Corps">Marine Corps</option>
+  <option value="Navy">Navy</option>
+</select>
+
+<div class="card">
+  <h2 id="koreanRank">대장</h2>
+  <p id="question">What is this rank in the selected service?</p>
+  <button onclick="showAnswer()">Show Answer</button>
+  <div class="answer" id="answerBox"></div>
+  <button onclick="nextCard()">Next</button>
+</div>
+
+<div class="card">
+  <h2>Type Practice</h2>
+  <p id="typeQuestion"></p>
+  <input id="typeInput" placeholder="Type abbreviation" />
+  <button onclick="checkTyped()">Check</button>
+  <p id="typeResult"></p>
+</div>
+
+<div class="card">
+  <h2>Reference Table</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Korean</th>
+        <th>Army</th>
+        <th>Air Force</th>
+        <th>Space Force</th>
+        <th>Marine Corps</th>
+        <th>Navy</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+</div>
+
+<script>
+const ranks = [
+  {
+    korean: "대장",
+    Army: "GEN - General",
+    "Air Force": "Gen - General",
+    "Space Force": "Gen - General",
+    "Marine Corps": "Gen - General",
+    Navy: "ADM - Admiral"
+  },
+  {
+    korean: "중장",
+    Army: "LTG - Lieutenant General",
+    "Air Force": "Lt Gen - Lieutenant General",
+    "Space Force": "Lt Gen - Lieutenant General",
+    "Marine Corps": "LtGen - Lieutenant General",
+    Navy: "VADM - Vice Admiral"
+  },
+  {
+    korean: "소장",
+    Army: "MG - Major General",
+    "Air Force": "Maj Gen - Major General",
+    "Space Force": "Maj Gen - Major General",
+    "Marine Corps": "MajGen - Major General",
+    Navy: "RADM - Rear Admiral"
+  },
+  {
+    korean: "준장",
+    Army: "BG - Brigadier General",
+    "Air Force": "Brig Gen - Brigadier General",
+    "Space Force": "Brig Gen - Brigadier General",
+    "Marine Corps": "BGen - Brigadier General",
+    Navy: "RDML - Rear Admiral Lower Half"
+  },
+  {
+    korean: "대령",
+    Army: "COL - Colonel",
+    "Air Force": "Col - Colonel",
+    "Space Force": "Col - Colonel",
+    "Marine Corps": "Col - Colonel",
+    Navy: "CAPT - Captain"
+  },
+  {
+    korean: "중령",
+    Army: "LTC - Lieutenant Colonel",
+    "Air Force": "Lt Col - Lieutenant Colonel",
+    "Space Force": "Lt Col - Lieutenant Colonel",
+    "Marine Corps": "LtCol - Lieutenant Colonel",
+    Navy: "CDR - Commander"
+  },
+  {
+    korean: "소령",
+    Army: "MAJ - Major",
+    "Air Force": "Maj - Major",
+    "Space Force": "Maj - Major",
+    "Marine Corps": "Maj - Major",
+    Navy: "LCDR - Lieutenant Commander"
+  },
+  {
+    korean: "대위",
+    Army: "CPT - Captain",
+    "Air Force": "Capt - Captain",
+    "Space Force": "Capt - Captain",
+    "Marine Corps": "Capt - Captain",
+    Navy: "LT - Lieutenant"
+  },
+  {
+    korean: "중위",
+    Army: "1LT - First Lieutenant",
+    "Air Force": "1st Lt - First Lieutenant",
+    "Space Force": "1st Lt - First Lieutenant",
+    "Marine Corps": "1stLt - First Lieutenant",
+    Navy: "LTJG - Lieutenant Junior Grade"
+  },
+  {
+    korean: "소위",
+    Army: "2LT - Second Lieutenant",
+    "Air Force": "2d Lt - Second Lieutenant",
+    "Space Force": "2nd Lt - Second Lieutenant",
+    "Marine Corps": "2ndLt - Second Lieutenant",
+    Navy: "ENS - Ensign"
+  },
+  {
+    korean: "준위",
+    Army: "WO - Warrant Officer",
+    "Air Force": "WO - Warrant Officer",
+    "Space Force": "N/A",
+    "Marine Corps": "WO - Warrant Officer",
+    Navy: "WO - Warrant Officer"
+  },
+  {
+    korean: "원사",
+    Army: "SGM - Sergeant Major",
+    "Air Force": "CMSgt - Chief Master Sergeant",
+    "Space Force": "CMSgt - Chief Master Sergeant",
+    "Marine Corps": "MGySgt - Master Gunnery Sergeant",
+    Navy: "MCPO - Master Chief Petty Officer"
+  },
+  {
+    korean: "상사",
+    Army: "MSG - Master Sergeant",
+    "Air Force": "SMSgt - Senior Master Sergeant",
+    "Space Force": "SMSgt - Senior Master Sergeant",
+    "Marine Corps": "MSgt - Master Sergeant",
+    Navy: "SCPO - Senior Chief Petty Officer"
+  },
+  {
+    korean: "중사",
+    Army: "SFC - Sergeant First Class",
+    "Air Force": "MSgt - Master Sergeant",
+    "Space Force": "MSgt - Master Sergeant",
+    "Marine Corps": "GySgt - Gunnery Sergeant",
+    Navy: "CPO - Chief Petty Officer"
+  },
+  {
+    korean: "하사",
+    Army: "SSG - Staff Sergeant",
+    "Air Force": "TSgt - Technical Sergeant",
+    "Space Force": "TSgt - Technical Sergeant",
+    "Marine Corps": "SSgt - Staff Sergeant",
+    Navy: "PO1 - Petty Officer First Class"
+  },
+  {
+    korean: "병장",
+    Army: "SGT - Sergeant",
+    "Air Force": "SSgt - Staff Sergeant",
+    "Space Force": "Sgt - Sergeant",
+    "Marine Corps": "Sgt - Sergeant",
+    Navy: "PO2 - Petty Officer Second Class"
+  },
+  {
+    korean: "상병",
+    Army: "CPL / SPC - Corporal / Specialist",
+    "Air Force": "SrA - Senior Airman",
+    "Space Force": "Specialist 4",
+    "Marine Corps": "Cpl - Corporal",
+    Navy: "PO3 - Petty Officer Third Class"
+  },
+  {
+    korean: "일병",
+    Army: "PFC - Private First Class",
+    "Air Force": "A1C - Airman First Class",
+    "Space Force": "Specialist 3",
+    "Marine Corps": "LCpl - Lance Corporal",
+    Navy: "SN - Seaman"
+  },
+  {
+    korean: "이병",
+    Army: "PV2 - Private",
+    "Air Force": "Amn - Airman",
+    "Space Force": "Specialist 2",
+    "Marine Corps": "PFC - Private First Class",
+    Navy: "SA - Seaman Apprentice"
+  },
+  {
+    korean: "훈병",
+    Army: "PVT - Private",
+    "Air Force": "AB - Airman Basic",
+    "Space Force": "Specialist 1",
+    "Marine Corps": "Pvt - Private",
+    Navy: "SR - Seaman Recruit"
+  }
+];
+
+let current = 0;
+
+function getService() {
+  return document.getElementById("service").value;
+}
+
+function updateCard() {
+  const rank = ranks[current];
+  document.getElementById("koreanRank").textContent = rank.korean;
+  document.getElementById("answerBox").style.display = "none";
+  document.getElementById("answerBox").textContent = rank[getService()];
+  document.getElementById("typeQuestion").textContent =
+    `${rank.korean} in ${getService()} abbreviation?`;
+  document.getElementById("typeInput").value = "";
+  document.getElementById("typeResult").textContent = "";
+}
+
+function showAnswer() {
+  document.getElementById("answerBox").style.display = "block";
+}
+
+function nextCard() {
+  current = Math.floor(Math.random() * ranks.length);
+  updateCard();
+}
+
+function checkTyped() {
+  const rank = ranks[current];
+  const service = getService();
+  const correct = rank[service].split(" - ")[0].toLowerCase();
+  const input = document.getElementById("typeInput").value.trim().toLowerCase();
+
+  if (input === correct) {
+    document.getElementById("typeResult").textContent = "✅ Correct";
+  } else {
+    document.getElementById("typeResult").textContent =
+      `❌ Correct answer: ${rank[service]}`;
+  }
+}
+
+function buildTable() {
+  const body = document.getElementById("tableBody");
+  ranks.forEach(r => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${r.korean}</td>
+      <td>${r.Army}</td>
+      <td>${r["Air Force"]}</td>
+      <td>${r["Space Force"]}</td>
+      <td>${r["Marine Corps"]}</td>
+      <td>${r.Navy}</td>
+    `;
+    body.appendChild(tr);
+  });
+}
+
+document.getElementById("service").addEventListener("change", updateCard);
+buildTable();
+updateCard();
+</script>
+
+</body>
+</html>
